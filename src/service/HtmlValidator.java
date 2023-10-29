@@ -6,7 +6,6 @@ package service;
  */
 import java.io.*;
 import java.util.*;
-import javax.swing.JFrame;
 import view.AppUI;
 
 public class HtmlValidator {
@@ -19,70 +18,69 @@ public class HtmlValidator {
     public HtmlValidator(AppUI ui) {
         this.ui = ui;
     }
-    
-    
-    /**
-     *
-     * @param filePath
-     * @return
-     */
+
     public boolean validateFile(String filePath) {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
+            boolean insideTag = false;
+            StringBuilder currentTag = new StringBuilder();
+
             while ((line = reader.readLine()) != null) {
-                processLine(line.trim().toLowerCase());
+                for (char c : line.toCharArray()) {
+                    if (c == '<') {
+                        insideTag = true;
+                        currentTag = new StringBuilder();
+                    }
+
+                    if (insideTag) {
+                        currentTag.append(c);
+                        if (c == '>') {
+                            insideTag = false;
+                            processTag(currentTag.toString());
+                        }
+                    }
+                }
             }
-            
-            // Verificar se todas as tags foram fechadas
-            if (!tagsStack.isEmpty()) {
-                System.out.println("Faltam tags finais para as seguintes tags de início: " + tagsStack);
-                ui.preencherTextArea("Faltam tags finais para as seguintes tags de início:" + tagsStack);
-                return false;
+
+            while (!tagsStack.isEmpty()) {
+                String unclosedTag = tagsStack.pop();
+                ui.preencherTextArea("Faltam tags finais para a seguinte tag de início: " + unclosedTag);
             }
-            
+
         } catch (IOException e) {
-            System.out.println("Erro ao ler o arquivo: " + e.getMessage());
             ui.preencherTextArea("Erro ao ler o arquivo: " + e.getMessage());
             return false;
         }
-        
+
         // Se chegamos até aqui, o arquivo está bem formatado
         printTagsCount();
         return true;
     }
-    
-    private void processLine(String line) {
-        // Processamento básico para extrair e validar tags, pode ser expandido
-        if (line.startsWith("<")) {
-            if (line.startsWith("</")) {
-                // Tag final
-                String closingTag = line.substring(2, line.indexOf('>'));
-                if (!tagsStack.isEmpty() && tagsStack.peek().equals(closingTag)) {
-                    tagsStack.pop();
-                } else {
-                    System.out.println("Foi encontrada uma tag final inesperada: " + closingTag);
-                    ui.preencherTextArea("Foi encontrada uma tag final inesperada: " + closingTag);
-                }
+
+    private void processTag(String tag) {
+        if (tag.startsWith("</")) {
+            // Tag de fechamento
+            String closingTag = tag.substring(2, tag.length() - 1);
+            if (!tagsStack.isEmpty() && tagsStack.peek().equals(closingTag)) {
+                tagsStack.pop();
             } else {
-                // Tag de início
-                String openingTag = line.substring(1, line.indexOf(' ') == -1 ? line.indexOf('>') : line.indexOf(' '));
-                if (!SINGLETON_TAGS.contains(openingTag)) {
-                    tagsStack.push(openingTag);
-                }
-                tagsCount.put(openingTag, tagsCount.getOrDefault(openingTag, 0) + 1);
+                ui.preencherTextArea("Foi encontrada uma tag final inesperada: " + closingTag);
             }
+        } else if (tag.startsWith("<")) {
+            // Tag de início
+            String openingTag = tag.substring(1, tag.indexOf('>'));
+            if (!SINGLETON_TAGS.contains(openingTag)) {
+                tagsStack.push(openingTag);
+            }
+            tagsCount.put(openingTag, tagsCount.getOrDefault(openingTag, 0) + 1);
         }
     }
-    
+
     private void printTagsCount() {
-        System.out.println("Tags encontradas:");
         ui.preencherTextArea("Tags encontradas:");
-        tagsCount.entrySet().stream()
-            .sorted(Map.Entry.comparingByKey())
-            .forEach(entry -> System.out.println(entry.getKey() + ": " + entry.getValue()));
-        tagsCount.entrySet().stream()
-            .sorted(Map.Entry.comparingByKey())
-            .forEach(entry -> ui.preencherTextArea(entry.getKey() + ": " + entry.getValue()));
+        tagsCount.forEach((tag, count) -> {
+            System.out.println(tag + ": " + count);
+            ui.preencherTable(tag, count);
+        });
     }
 }
-

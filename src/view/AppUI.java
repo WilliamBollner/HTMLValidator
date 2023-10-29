@@ -1,5 +1,6 @@
 package view;
 
+import javax.swing.table.DefaultTableModel;
 import service.HtmlValidator;
 
 /**
@@ -33,7 +34,7 @@ public class AppUI extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea = new javax.swing.JTextArea();
         jScrollPane3 = new javax.swing.JScrollPane();
-        jTable2 = new javax.swing.JTable();
+        table = new javax.swing.JTable();
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -63,10 +64,9 @@ public class AppUI extends javax.swing.JFrame {
         jTextArea.setRows(5);
         jScrollPane1.setViewportView(jTextArea);
 
-        jTable2.setModel(new javax.swing.table.DefaultTableModel(
+        table.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null},
-                {null, null}
+
             },
             new String [] {
                 "Tag", "Número ocorrências"
@@ -87,7 +87,7 @@ public class AppUI extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        jScrollPane3.setViewportView(jTable2);
+        jScrollPane3.setViewportView(table);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -131,6 +131,10 @@ public class AppUI extends javax.swing.JFrame {
 
     public void preencherTextArea(String texto) {
         jTextArea.append(texto + "\n");
+    }
+    public void preencherTable(String tag, Integer numOcorrencia) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.addRow(new Object[]{tag, numOcorrencia});
     }
     private void btAnalisarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btAnalisarActionPerformed
         HtmlValidator validator = new HtmlValidator(this);
@@ -185,8 +189,8 @@ public class AppUI extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
-    private javax.swing.JTable jTable2;
     private javax.swing.JTextArea jTextArea;
+    private javax.swing.JTable table;
     private javax.swing.JTextField tfFileName;
     // End of variables declaration//GEN-END:variables
 }
