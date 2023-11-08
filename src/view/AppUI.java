@@ -1,13 +1,15 @@
 package view;
 
 import javax.swing.table.DefaultTableModel;
+
+import estrutura.pilha.PilhaCheiaException;
+import estrutura.pilha.PilhaVaziaException;
 import service.HtmlValidator;
 
 /**
  *
  * @author willi
  */
-
 public class AppUI extends javax.swing.JFrame {
 
     /**
@@ -56,7 +58,11 @@ public class AppUI extends javax.swing.JFrame {
         btAnalisar.setText("Analisar");
         btAnalisar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btAnalisarActionPerformed(evt);
+                try {
+                    btAnalisarActionPerformed(evt);
+                } catch (PilhaVaziaException | PilhaCheiaException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
 
@@ -132,13 +138,14 @@ public class AppUI extends javax.swing.JFrame {
     public void preencherTextArea(String texto) {
         jTextArea.append(texto + "\n");
     }
-    public void preencherTable(String tag, Integer numOcorrencia) {
+
+    public void preencherTable(String tag, String numOcorrencia) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.addRow(new Object[]{tag, numOcorrencia});
     }
-    private void btAnalisarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btAnalisarActionPerformed
+    private void btAnalisarActionPerformed(java.awt.event.ActionEvent evt) throws PilhaVaziaException, PilhaCheiaException {//GEN-FIRST:event_btAnalisarActionPerformed
         HtmlValidator validator = new HtmlValidator(this);
-        
+
         if (!String.valueOf(tfFileName).isBlank()) {
             validator.validateFile(String.valueOf(tfFileName.getText()));
             System.out.print(String.valueOf(tfFileName.getText()));
