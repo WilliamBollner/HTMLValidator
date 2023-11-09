@@ -135,11 +135,11 @@ public class AppUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public void preencherTextArea(String texto) {
+    public void fillTextArea(String texto) {
         jTextArea.append(texto + "\n");
     }
 
-    public void preencherTable(String tag, String numOcorrencia) {
+    public void fillTable(String tag, String numOcorrencia) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.addRow(new Object[]{tag, numOcorrencia});
     }
