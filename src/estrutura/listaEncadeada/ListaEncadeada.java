@@ -25,6 +25,9 @@ public class ListaEncadeada<T> {
     }
 
     public boolean estaVazia() {
+        if (primeiro == null) {
+            return true;
+        }
         return primeiro.equals(null);
     }
 

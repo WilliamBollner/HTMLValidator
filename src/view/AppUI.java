@@ -147,6 +147,8 @@ public class AppUI extends javax.swing.JFrame {
         HtmlValidator validator = new HtmlValidator(this);
 
         if (!String.valueOf(tfFileName).isBlank()) {
+            jTextArea.setText("");
+            ((DefaultTableModel) table.getModel()).setRowCount(0);
             validator.validateFile(String.valueOf(tfFileName.getText()));
             System.out.print(String.valueOf(tfFileName.getText()));
         } else {
