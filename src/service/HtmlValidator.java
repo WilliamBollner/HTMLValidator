@@ -15,17 +15,23 @@ public class HtmlValidator {
     private ListaEncadeada<String> tagsCount = new ListaEncadeada<>();
     private ListaEncadeada<String> tagsSingleton = new ListaEncadeada<>();
     private ListaEncadeada<String> singleton = new ListaEncadeada<>();
+    private ListaEncadeada<String> listToIgnore = new ListaEncadeada<>();
+    private ListaEncadeada<String> openedTags = new ListaEncadeada<>();
+    private ListaEncadeada<String> closedTags = new ListaEncadeada<>();
     private AppUI ui;
     private boolean isError = false;
+    boolean unexpectedTagFound = false;
 
     public HtmlValidator(AppUI ui) {
         this.ui = ui;
     }
+
     public boolean validateFile(String filePath) {
         preencherSingletons();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             boolean insideTag = false;
+            boolean atribute = false; //variavel que vai ser true se houver um espaço depois da tag
             StringBuilder currentTag = new StringBuilder();
 
             while ((line = reader.readLine()) != null) {
@@ -36,24 +42,22 @@ public class HtmlValidator {
                     }
 
                     if (insideTag) {
-                        currentTag.append(c);
+                        if (c != ' ' && !atribute && c != '>') { //se não for um espaço e a variavel for falsa
+                            currentTag.append(c);
+                        } else {
+                            atribute = true;
+
+                        }
                         if (c == '>') {
+                            currentTag.append(c);
                             insideTag = false;
+                            atribute = false;
                             processTag(currentTag.toString());
                         }
                     }
                 }
             }
-
-            while (!tagsStack.estaVazia()) {
-                tagsStack.pop();
-                if(!tagsStack.estaVazia()) {
-                String unclosedTag = tagsStack.pop();
-                ui.fillTextArea("Faltam tags finais para a seguinte tag de início: " + unclosedTag);
-                isError = true;
-                }
-            }
-
+            checkTags();
         } catch (IOException e) {
             ui.fillTextArea("Erro ao ler o arquivo: " + e.getMessage());
             return false;
@@ -63,8 +67,7 @@ public class HtmlValidator {
             throw new RuntimeException(e);
         }
 
-        // Se chegamos até aqui, o arquivo está bem formatado
-        if(!isError) {
+        if (!isError) {
             printTagsCount();
         }
         return true;
@@ -73,19 +76,21 @@ public class HtmlValidator {
     private void processTag(String tag) throws PilhaVaziaException, PilhaCheiaException {
         if (tag.startsWith("</")) {
             // Tag de fechamento
-            String closingTag = tag.substring(2, tag.length() - 1);
+            String closingTag = tag.substring(2, tag.length() - 1).toLowerCase();
             if (!tagsStack.estaVazia() && tagsStack.peek().equals(closingTag)) {
                 tagsStack.pop();
-            } else {
-                ui.fillTextArea("Foi encontrada uma tag final inesperada: " + closingTag);
+            } else if (!unexpectedTagFound) {
+                ui.fillTextArea("Foi encontrada uma tag final inesperada: " + closingTag + ". O esperado era: " + tagsStack.peek());
+                unexpectedTagFound = true;
                 isError = true;
             }
+            closedTags.inserir(closingTag);
         } else if (tag.startsWith("<")) {
             // Tag de início
-
-            String openingTag = tag.substring(1, tag.indexOf('>'));
+            String openingTag = tag.substring(1, tag.indexOf('>')).toLowerCase();
             if (singleton.buscar(openingTag) == null) {
                 tagsStack.push(openingTag);
+                openedTags.inserir(openingTag);
             } else {
                 tagsSingleton.inserir(openingTag);
             }
@@ -94,33 +99,24 @@ public class HtmlValidator {
     }
 
     private void printTagsCount() {
-        ui.fillTextArea("O arquivo está bem formatado.");
+        ui.fillTextArea("Tags encontradas:");
         String info = tagsCount.getPrimeiro().getInfo();
-        int n = contarTags(tagsCount, info);
         NoLista<String> atual = tagsCount.getPrimeiro();
         do {
             if (atual != null) {
-                info = atual.getInfo();
-                n = contarTags(tagsCount, info);
-                System.out.println(info + ": " + n);
-                ui.fillTable(info, Integer.toString(n));
+                if (listToIgnore.buscar(atual.getInfo()) == null) {
+                    info = atual.getInfo();
+                    int n = contarTags(tagsCount, info);
+                    listToIgnore.inserir(info);
+                    ui.fillTable(info, Integer.toString(n));
+                }
             }
             atual = atual.getProximo();
-            if(n > 1) {
-                if(atual.equals(atual.getProximo())) {
-                    do {
-                        atual = atual.getProximo();
-                    } while (atual.equals(atual.getProximo()));
-                }
-                for(int i = 0 ; i < n ; i++) {
-                    tagsCount.retirar(info);
-                }
-            }
         } while (atual != null);
     }
 
-    public <T> int contarTags(ListaEncadeada<T> lista, T info) {
-        NoLista<T> atual = lista.getPrimeiro();
+    public <T> int contarTags(ListaEncadeada<T> list, T info) {
+        NoLista<T> atual = list.getPrimeiro();
         int contador = 0;
 
         while (atual != null) {
@@ -130,6 +126,31 @@ public class HtmlValidator {
             atual = atual.getProximo();
         }
         return contador;
+    }
+
+    private void checkTags() {
+        NoLista<String> atualOpen = openedTags.getPrimeiro();
+        if (!openedTags.estaVazia()) {
+            while (atualOpen != null) {
+                if (closedTags.buscar(atualOpen.getInfo()) != null) {
+                    openedTags.retirar(atualOpen.getInfo());
+                    closedTags.retirar(atualOpen.getInfo());
+                }
+                atualOpen = atualOpen.getProximo();
+            }
+            printTagErrors();
+        }
+    }
+
+    private void printTagErrors() {
+        if (!openedTags.estaVazia()) {
+            NoLista<String> atual = openedTags.getPrimeiro();
+            while (atual != null) {
+                ui.fillTextArea("Faltam tags finais para a seguinte tag de início: " + atual.getInfo());
+                isError = true;
+                atual = atual.getProximo();
+            }
+        }
     }
 
     private void preencherSingletons() {
@@ -145,6 +166,6 @@ public class HtmlValidator {
         singleton.inserir("link");
         singleton.inserir("param");
         singleton.inserir("source");
-        singleton.inserir("!DOCTYPE");
+        singleton.inserir("!doctype");
     }
 }
