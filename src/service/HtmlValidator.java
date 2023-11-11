@@ -76,18 +76,18 @@ public class HtmlValidator {
     private void processTag(String tag) throws PilhaVaziaException, PilhaCheiaException {
         if (tag.startsWith("</")) {
             // Tag de fechamento
-            String closingTag = tag.substring(2, tag.length() - 1);
+            String closingTag = tag.substring(2, tag.length() - 1).toLowerCase();
             if (!tagsStack.estaVazia() && tagsStack.peek().equals(closingTag)) {
                 tagsStack.pop();
             } else if (!unexpectedTagFound) {
-                ui.fillTextArea("Foi encontrada uma tag final inesperada: " + closingTag);
+                ui.fillTextArea("Foi encontrada uma tag final inesperada: " + closingTag + ". O esperado era: " + tagsStack.peek());
                 unexpectedTagFound = true;
                 isError = true;
             }
             closedTags.inserir(closingTag);
         } else if (tag.startsWith("<")) {
             // Tag de início
-            String openingTag = tag.substring(1, tag.indexOf('>'));
+            String openingTag = tag.substring(1, tag.indexOf('>')).toLowerCase();
             if (singleton.buscar(openingTag) == null) {
                 tagsStack.push(openingTag);
                 openedTags.inserir(openingTag);
@@ -151,14 +151,6 @@ public class HtmlValidator {
                 atual = atual.getProximo();
             }
         }
-        if (!closedTags.estaVazia()) {
-            NoLista<String> atual = closedTags.getPrimeiro();
-            while (atual != null) {
-                ui.fillTextArea("Falta abrir tag para a seguinte tag final: " + atual.getInfo());
-                isError = true;
-                atual = atual.getProximo();
-            }
-        }
     }
 
     private void preencherSingletons() {
@@ -174,6 +166,6 @@ public class HtmlValidator {
         singleton.inserir("link");
         singleton.inserir("param");
         singleton.inserir("source");
-        singleton.inserir("!DOCTYPE");
+        singleton.inserir("!doctype");
     }
 }
