@@ -4,6 +4,7 @@ import java.io.*;
 
 import estrutura.listaEncadeada.ListaEncadeada;
 import estrutura.listaEncadeada.NoLista;
+import estrutura.ordenacao.OrdenacaoMergeSort;
 import estrutura.pilha.PilhaCheiaException;
 import estrutura.pilha.PilhaVaziaException;
 import estrutura.pilha.PilhaVetor;
@@ -97,8 +98,37 @@ public class HtmlValidator {
             tagsCount.inserir(openingTag);
         }
     }
+    
+    private void sortTags(ListaEncadeada<String> lista) {
+    	String[] vetor = new String[lista.getComprimento()];
+    	NoLista<String> atual = lista.getPrimeiro();
+    	int comprimentoLista = lista.getComprimento();
+    	
+    	for (int i = 0 ; i < comprimentoLista ; i++) {
+    		vetor[i] = atual.getInfo();
+    		NoLista<String> anterior = atual;
+    		atual = atual.getProximo();
+    		lista.retirar(anterior.getInfo());
+    		
+    	}
+    	
+    	OrdenacaoMergeSort<String> ord = new OrdenacaoMergeSort<String>();
+    	ord.setInfo(vetor);
+    	ord.ordenar();
+    	vetor = ord.getInfo();
+    	for (int i = comprimentoLista-1 ; i >= 0 ; i--) {
+    		lista.inserir(vetor[i]);
+    	}
+    	
+    	//Testes
+    	ord.display();
+    	if(lista.getPrimeiro().getInfo() == vetor[0]) {
+			System.out.println("Ordenação feita!");
+		}
+    }
 
     private void printTagsCount() {
+    	sortTags(tagsCount);
         ui.fillTextArea("Tags encontradas:");
         String info = tagsCount.getPrimeiro().getInfo();
         NoLista<String> atual = tagsCount.getPrimeiro();

@@ -67,12 +67,12 @@ public class ListaEncadeada<T> {
         }
     }
 
-    public int obterComprimento() {
+    public int getComprimento() {
         return comprimento;
     }
 
     public NoLista<T> obterNode(int index) {
-        if (index < 0 || index >= obterComprimento()) {
+        if (index < 0 || index >= getComprimento()) {
             throw new IndexOutOfBoundsException("Índice fora dos limites da lista");
         }
 
